@@ -23,6 +23,7 @@ from homeassistant.core import HomeAssistant, Event
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import entity_platform
 
 from .const import (
     DOMAIN,
@@ -123,6 +124,57 @@ async def async_setup_entry(
     }
     config = {**data, **options}
     await _pioneer_add_entities(hass, config_entry, async_add_entities, pioneer, config)
+
+    platform = entity_platform.async_get_current_platform()
+
+    # This will call entity.set_tone_mode(mode=VALUE)
+    platform.async_register_entity_service(
+        "set_tone",
+        {
+            vol.Optional("tone"): str,
+            vol.Optional("bass_level"): int,
+            vol.Optional("treble_level"): int,
+        },
+        "async_set_tone",
+    )
+
+    # This will call entity.set_dimmer(dimmer=VALUE)
+    platform.async_register_entity_service(
+        "set_dimmer", {vol.Required("dimmer"): int}, "async_set_dimmer"
+    )
+
+    # This will call entity.async_set_remote_lock(remote_lock=VALUE)
+    platform.async_register_entity_service(
+        "set_remote_lock", {vol.Required("remote_lock"): bool}, "async_set_remote_lock"
+    )
+
+    # This will call entity.async_set_panel_lock(panel_lock=VALUE)
+    platform.async_register_entity_service(
+        "set_panel_lock", {vol.Required("panel_lock"): str}, "async_set_panel_lock"
+    )
+
+    # This will call entity.async_set_amp_settings(params*)
+    platform.async_register_entity_service(
+        "set_amp_settings",
+        {
+            vol.Optional("speaker_mode"): str,
+            vol.Optional("hdmi_out_mode"): str,
+            vol.Optional("hdmi_audio_mode"): str,
+            vol.Optional("pqls"): bool,
+            vol.Optional("amp"): str,
+        },
+        "async_set_amp_settings",
+    )
+
+    # This will call entity.async_set_tuner
+    platform.async_register_entity_service(
+        "set_tuner",
+        {
+            vol.Required("band"): str,
+            vol.Required("frequency"): str,
+        },
+        "async_set_tuner",
+    )
 
 
 async def _pioneer_add_entities(
@@ -401,3 +453,55 @@ class PioneerZone(MediaPlayerEntity):
         """Poll properties on demand."""
         _LOGGER.debug(">> PioneerZone.async_update(%s)", self._zone)
         return await self._pioneer.update()
+
+    async def async_set_tone(self, tone, bass_level=None, treble_level=None):
+        """Set the tone settings of a zone."""
+        ## Validate the zone is ok
+        if self._pioneer.tone.get(self._zone) is not None:
+            return await self._pioneer.set_tone_settings(
+                tone, treble_level, bass_level, zone=self._zone
+            )
+        else:
+            return False
+
+    async def async_set_panel_lock(self, panel_lock):
+        """Set the panel lock of a zone."""
+        if self._pioneer.panel_lock.get(self._zone) is not None:
+            return await self._pioneer.set_panel_lock(
+                str(panel_lock).upper(), self._zone
+            )
+
+    async def async_set_dimmer(self, dimmer):
+        """Set the display dimmer."""
+        ## Only valid on zone 1
+        if (self._zone == "1") and (self._pioneer.power.get(self._zone) is True):
+            await self._pioneer.set_dimmer(str(dimmer), self._zone)
+            return True
+        else:
+            return False
+
+    async def async_set_remote_lock(self, remote_lock: bool):
+        """Set the remote lock of a zone."""
+        if self._pioneer.remote_lock.get(self._zone) is not None:
+            return await self._pioneer.set_remote_lock(
+                str(int(remote_lock)), self._zone
+            )
+
+    async def async_set_amp_settings(
+        self,
+        speaker_mode: str = None,
+        hdmi_out_mode: str = None,
+        hdmi_audio_mode: str = None,
+        pqls: bool = None,
+        amp: str = None,
+    ):
+        """Set global AMP settings."""
+        return await self._pioneer.set_amp_settings(
+            speaker_mode, hdmi_out_mode, hdmi_audio_mode, pqls, amp, self._zone
+        )
+    
+    async def async_set_tuner(self, band: str, frequency: str):
+        """Sets the tuner band and frequency."""
+        return await self._pioneer.set_tuner_frequency(
+            band, float(frequency), self._zone
+        )

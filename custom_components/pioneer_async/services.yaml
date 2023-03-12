@@ -1,0 +1,128 @@
+# Describes different services for pioneer_async integration
+
+set_tone:
+  name: Set tone
+  description: "Set tone settings for a given zone."
+  target:
+    entity:
+      integration: pioneer_async
+      domain: media_player
+  fields:
+    tone:
+      name: "Tone"
+      default: "Bypass"
+      selector:
+        select:
+          options:
+            - "Bypass"
+            - "ON"
+    bass_level:
+      name: "Bass Level"
+      default: 0
+      selector:
+       number:
+        min: -6
+        max: 6
+    treble_level:
+      name: "Treble Level"
+      default: 0
+      selector:
+       number:
+        min: -6
+        max: 6
+
+set_dimmer:
+  name: Set dimmer
+  description: Sets the dimmer of the front panel display on the AVR.
+  target:
+    entity:
+      integration: pioneer_async
+      domain: media_player
+  fields:
+    dimmer:
+      name: Dimmer Level
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 3
+
+set_panel_lock:
+  name: Set AVR Panel Lock
+  target:
+   entity:
+    integration: pioneer_async
+    domain: media_player
+  fields:
+   panel_lock:
+    name: Panel Lock
+    default: "OFF"
+    selector:
+     select:
+      options:
+       - "OFF"
+       - "PANEL ONLY"
+       - "PANEL + VOLUME"
+
+set_remote_lock:
+  name: Set AVR Remote Lock
+  target:
+   entity:
+    integration: pioneer_async
+    domain: media_player
+  fields:
+   remote_lock:
+    name: Locked
+    default: False
+    selector:
+     boolean:
+
+set_amp_settings:
+  name: Configure AMP Settings
+  target:
+    entity:
+      integration: pioneer_async
+      domain: media_player
+  fields:
+    speaker_mode:
+      name: Speaker Mode
+      default: "A+B"
+      selector:
+        select:
+          options:
+          - "OFF"
+          - "A"
+          - "B"
+          - "A+B"
+    hdmi_out_mode:
+      name: HDMI Mode
+      default: "ALL"
+      selector:
+        select:
+          options:
+          - "ALL"
+          - "HDMI 1"
+          - "HDMI 2"
+    hdmi_audio_mode:
+      name: HDMI Audio Mode
+      default: "AMP"
+      selector:
+        select:
+          options:
+            - "AMP"
+            - "PASSTHROUGH"
+    pqls:
+      name: PQLS
+      default: True
+      selector:
+        boolean:
+    amp:
+      name: AMP
+      default: "ON"
+      selector:
+        select:
+          options:
+            - "AMP ON"
+            - "AMP Front OFF"
+            - "AMP Front & Center OFF"
+            - "AMP OFF"
